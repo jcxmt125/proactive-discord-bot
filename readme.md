@@ -10,3 +10,5 @@ LLMs will likely be used for all decision making.
 The last part might create some OS headaches... let's see where this takes us!
 
 By the way, watch for egress when deploying this on a server... especially free tier.
+
+You could also just use the... various python files for other purposes. Just make sure to install dependancies!
