@@ -10,7 +10,7 @@ def shouldIRespond(LoA, messages):#I'm going to expect a message list for this, 
         construct += i
         construct += "\n"
 
-    construct += "The following is a list of recent messages. Would the bot be able to meaningfully contribute? Reply with 1 for yes and 0 for no.\n"
+    construct += "The following is a list of recent messages. Would the bot be able to meaningfully contribute? Reply with the number of the task for yes and -1 for no. Reply in a single number without text.\n"
 
     for i in messages:
         construct += i
@@ -21,19 +21,27 @@ def shouldIRespond(LoA, messages):#I'm going to expect a message list for this, 
     except:
         gem = nsllmreq("Only reply with a number. Do not contain any other text.",construct)
 
+    print(gem)
+
     try:
         return int(gem)
     except:
-        return -1
+        return -2
 
+#I forgot we'll have... multiple "commands"...
 def nltocommand(LoA, command):
     construct = ""
 
-    construct += "The following is a list of actions a bot can take. Look at the message from the user and return only the number of the action that is most appropriate. \n"
+    construct += "The following is a list of actions a bot can take. \n"
     for i in LoA:
         construct += i
         construct += "\n"
-    construct += "Command: " + command
+
+    construct += "Look at the following messages from users and return only the number of the action that is most appropriate. Reply in a single number without text. \n"
+    
+    for i in command:
+        construct += i
+        construct += "\n"
 
     try:
         #Gemini API errored out on me once... not again.

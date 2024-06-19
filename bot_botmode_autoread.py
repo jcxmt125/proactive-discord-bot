@@ -2,9 +2,11 @@ import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
-from nltocommand import shouldIRespond, nltocommand
+import nltocommand
 from geminillm import gemrequest
 import json
+from urlextract import URLExtract
+from cfradar import urlScan
 
 load_dotenv()
 
@@ -27,7 +29,7 @@ except:
 async def on_message(ctx):
     #Variables to adjust
     contextLength = 3
-    listOfActions = ["0. Factual responses"]
+    listOfActions = ["0. Factual responses", "1. URL scanning"]
 
     channels = channeldatainit
 
@@ -66,18 +68,43 @@ async def on_message(ctx):
 
     print(messagesPlaintextList)
 
-    resp = shouldIRespond(listOfActions, messagesPlaintextList)
+    resp = nltocommand.shouldIRespond(listOfActions, messagesPlaintextList)
 
     print(resp)
 
-    if resp == 1:#Respond!
-        construct = "The following are some recent messages. Generate a response most fitting to continue the conversation. Do not act as if you were a user. \n"
-        
-        for i in messagesPlaintextList:
-            construct += i
-            construct += "\n"
+    if resp >= 0:#Respond!
+        async with ctx.channel.typing():
 
-        await ctx.channel.send(gemrequest(construct)[1])
+            #So now we have to figure out what to do...
+            interpreted = resp
+
+            print(interpreted)
+
+            if interpreted == 0: #Factual
+                construct = "The following are some recent messages. Generate a response most fitting to continue the conversation. Do not act as if you were a user. \n"
+                
+                for i in messagesPlaintextList:
+                    construct += i
+                    construct += "\n"
+
+                    await ctx.channel.send(gemrequest(construct)[1])
+
+            elif interpreted == 1: #URL scan (the rate limit is pretty low with this API, probably should only scan the last message sent.)
+                url = URLExtract().find_urls(messagesPlaintextList[-1])[0]
+                if url[-1] == "/":
+                    url = url[0:-1]
+                print(url)
+                scanResults = urlScan(url)
+                try:
+                    verdict, timeMade = scanResults
+                    if verdict["malicious"]:
+                        await ctx.channel.send("The URL is likely malicious, catergorized as "+str(verdict["categories"])+". The report was made on "+timeMade+". Do NOT access the webpage for your own safety.")
+                    else:
+                        await ctx.channel.send("The URL is likely safe. The report was made on "+timeMade+".")
+                except:
+                    await ctx.channel.send("I've sent a request to scan the URL. The report should be available at https://radar.cloudflare.com/scan/"+scanResults+" in a few minutes. Check here, or run this command again!")
+
+            
     else:
         return
 
