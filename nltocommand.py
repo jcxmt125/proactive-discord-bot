@@ -10,7 +10,7 @@ def shouldIRespond(LoA, messages):#I'm going to expect a message list for this, 
         construct += i
         construct += "\n"
 
-    construct += "The following is a list of recent messages. Would the bot be able to meaningfully contribute? Reply with the number of the task for yes and -1 for no. Reply in a single number without text.\n"
+    construct += "The following is a list of recent messages. Would the bot be able to meaningfully contribute? Reply with the number of the task to use if applicable and -1 for no. Reply in a single number without text. Prioritize later messages.\n"
 
     for i in messages:
         construct += i

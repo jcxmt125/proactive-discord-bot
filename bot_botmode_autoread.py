@@ -7,6 +7,9 @@ from geminillm import gemrequest
 import json
 from urlextract import URLExtract
 from cfradar import urlScan
+from cfsd import sdgen
+import cfllm
+from pathlib import Path
 
 load_dotenv()
 
@@ -25,11 +28,13 @@ except:
     with open('data/channels.json') as f:
         channeldatainit = json.load(f)
 
+#TODO make this able to handle multiple requests
 @bot.event
 async def on_message(ctx):
     #Variables to adjust
-    contextLength = 3
-    listOfActions = ["0. Factual responses", "1. URL scanning"]
+    #Longer context length seems to cause issues. Let's try 1... (for some commands I might indiviudally make it longer)
+    contextLength = 1
+    listOfActions = ["0. Factual responses", "1. URL scanning" "2. Image generation"]
 
     channels = channeldatainit
 
@@ -104,7 +109,25 @@ async def on_message(ctx):
                 except:
                     await ctx.channel.send("I've sent a request to scan the URL. The report should be available at https://radar.cloudflare.com/scan/"+scanResults+" in a few minutes. Check here, or run this command again!")
 
-            
+            elif interpreted == 2: #Image generation
+                #We'll first want to turn the text into a usable prompt.
+                #I think we all know where this is going...
+
+                construct = "Create a usable Stable Diffusion prompt from the following messages.\n"
+                for i in messagesPlaintextList:
+                    construct += i
+                    construct += "\n"
+
+                #I am very unsure how well this will work
+                #Update on that: it took... so many... tries... to get the prompt right-
+                prompt = cfllm.nsllmreq("You are a creative assistant that follows messgaes exactly. Only reply with the prompt.",construct)
+
+                sdgen(prompt)
+
+                await ctx.channel.send("Prompt: "+prompt,file=discord.File('output.png'))
+
+                Path.unlink(Path("output.png"))
+
     else:
         return
 

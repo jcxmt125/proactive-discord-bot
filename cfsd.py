@@ -10,6 +10,9 @@ CLOUDFLARE_AI_API_KEY = os.getenv("CLOUDFLARE_AI_API_KEY")
 #This is probably fine (we might change the model later)
 model = '@cf/stabilityai/stable-diffusion-xl-base-1.0'
 
+#DON'T USE AI GATEWAY FOR THIS
+#I HAVE NEVER KNOWN I COULD HATE AN IMAGE THAT MUCH
+#(Context: It caches the image and sends it back for every single request, with no regards to the prompt)
 url = "https://api.cloudflare.com/client/v4/accounts/" + os.getenv("CLOUDFLARE_USER_ID") + "/ai/run/" + model
 
 headers = {

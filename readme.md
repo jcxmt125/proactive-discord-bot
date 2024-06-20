@@ -1,10 +1,10 @@
 # Discord bot that responds to you proactively
 This is a very work-in-progress project.
 The goals are to:
-- Make a bot that will respond to you when necessary
-- Remember who you are
-- Possibly some tools when required?
-- Make this bot runnable in... *very* resource constrained (aka GCloud e2-micro) environments.
+- Make a bot that will respond to you when necessary (Kinda done!)
+- Remember who you are (Paused)
+- Possibly some tools when required? (WIP)
+- Make this bot runnable in... *very* resource constrained (aka GCloud e2-micro) environments. (Seems to work)
 
 To achieve this, we'll likely have to make the bot read every message it gets and figure out when best to respond...
 LLMs will likely be used for all decision making.
@@ -22,3 +22,11 @@ You will need a .env file though, with the following things:
 - S3COMPAT_ENDPOINT_URL, S3KEYID, S3SECRET, S3_BUCKET_PUBLIC_URL, S3_BUCKET_NAME: Sign up for an S3 compatible storage provider of your choice! 
 - GEMINI_API_KEY: Get one at google AI studio as detailed above. This is also free as long as you don't set billing up.
 - DISCORD_BOT_TOKEN: Get it at Discord Developer portal!
+
+## How are the external tools going?
+- Factual responses (straight LLM) (Done!)
+- URL scanning (Cloudflare Radar) (Done!)
+- Stable Diffusion (CLoudflare AI) (Done!)
+- Convert txt file to webpage (WIP) (possible hard-code?)
+- Transcribe message (WIP) -> Maybe respond if required? (If voice is a command)
+- Convert filetypes? (HEIC/AVIF breaks for discord...) (Possible hard-code?)
