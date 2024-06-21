@@ -10,6 +10,7 @@ from cfradar import urlScan
 from cfsd import sdgen
 import cfllm
 from pathlib import Path
+import localconverters
 
 load_dotenv()
 
@@ -19,6 +20,8 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="?", description="a bot that will respond to you", intents=intents)
 
 #load settings from JSON file (it should only use except when running for the first time)
+#guild:channelid = respond only in a channel
+#guild:channelid+0 = non-hardcode response only in channel, hardcode response everywhere
 try:
     with open('data/channels.json') as f:
         channeldatainit = json.load(f)
@@ -38,9 +41,11 @@ async def on_message(ctx):
 
     channels = channeldatainit
 
+
+    #single channel mmode setup
     if ctx.content.startswith('$setup'):
 
-        channels[ctx.guild.id] = ctx.channel.id
+        channels[str(ctx.guild.id)] = str(ctx.channel.id)
 
         with open('data/channels.json', 'w') as f:
             json.dump(channels, f)
@@ -51,14 +56,71 @@ async def on_message(ctx):
         await ctx.channel.send("Okay, I'll only reply in this channel!")
 
         return
+    
+    elif ctx.content.startswith('$verbosesetup'):
+
+        channels[str(ctx.guild.id)] = str(ctx.channel.id)+"-"
+
+        with open('data/channels.json', 'w') as f:
+            json.dump(channels, f)
+
+        with open('data/channels.json') as f:
+            channels = json.load(f)
+
+        await ctx.channel.send("Okay, I'll only do AI responses in this channel! Harcoded responses will run everywhere.")
+
+        return
 
     if ctx.author == bot.user:
         return
-    
-    if ctx.channel.id != channels[str(ctx.guild.id)]:
-        return
 
-    print("Correct channel")
+    print(ctx.channel.id, channels[str(ctx.guild.id)][0:-1], channels[str(ctx.guild.id)])
+
+    correctChannel = False
+    verboseMode = False
+
+    if (str(ctx.channel.id) == channels[str(ctx.guild.id)][0:-1]) or (str(ctx.channel.id) == channels[str(ctx.guild.id)]):
+        correctChannel = True
+
+    if channels[str(ctx.guild.id)][-1] == "-":
+        verboseMode = True
+
+    #hardcode
+    if correctChannel or verboseMode:
+        attachments = ctx.attachments
+        #attachment related hardcoding -> AVIF/HEIF conversion
+        if len(attachments) != 0:
+            
+            
+            for i in attachments:
+
+                ctype = i.content_type.split('/')
+                filename = i.filename
+                
+                if ctype[0] == "image":
+                    if ctype[1] == "heif" or ctype[1] == "avif":
+                        await i.save(fp=filename)
+                        localconverters.imagemagick(filename,"webp")
+                        
+                        splitname = filename.split(".")
+
+                        noext = ""
+
+                        for i in range(len(splitname)-1):
+                            noext += splitname[i]
+
+                        newfilename = noext+".webp"
+
+                        print(newfilename)
+
+                        ctx.channel.send("",file=discord.File(newfilename))
+
+                        Path.unlink(filename)
+                        Path.unlink(newfilename)
+                
+            
+
+                        
 
     channel = ctx.channel
     try:
