@@ -91,15 +91,21 @@ async def on_message(ctx):
         #attachment related hardcoding -> AVIF/HEIF conversion
         if len(attachments) != 0:
             
-            
+            listoldfiles = []
+            listnewfiles = []
+            listnewfilenames = []
+                
             for i in attachments:
 
                 ctype = i.content_type.split('/')
                 filename = i.filename
                 
                 if ctype[0] == "image":
-                    if ctype[1] == "heif" or ctype[1] == "avif":
+                    if ctype[1] == "heic" or ctype[1] == "avif":
                         await i.save(fp=filename)
+
+                        listoldfiles.append(filename)
+
                         localconverters.imagemagick(filename,"webp")
                         
                         splitname = filename.split(".")
@@ -113,14 +119,27 @@ async def on_message(ctx):
 
                         print(newfilename)
 
-                        ctx.channel.send("",file=discord.File(newfilename))
+                        listnewfiles.append(discord.File(newfilename))
+                        listnewfilenames.append(newfilename)
 
-                        Path.unlink(filename)
-                        Path.unlink(newfilename)
+            if len(listnewfiles) != 0:
+                await ctx.channel.send(files=listnewfiles)
+
+                #Clean up the downloaded files
+                for i in listoldfiles:
+                    Path.unlink(Path(i))
+                for j in listnewfilenames:
+                    Path.unlink(Path(j))
+
+                    return
                 
             
 
                         
+    #AI responses
+
+    if not correctChannel:
+        return
 
     channel = ctx.channel
     try:
