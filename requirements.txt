@@ -2,7 +2,8 @@ requests
 python-dotenv
 google-generativeai
 datetime
-os
 pathlib
 boto3
 urlextract
+yt-dlp
+discord.py

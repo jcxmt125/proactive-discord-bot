@@ -25,10 +25,14 @@ You will need a .env file though, with the following things:
 
 ## milestone at 24/06/22
 
+Now with many more functions! You'll need the following external dependancies (non-python):
+- ImageMagick (in PATH) (either as magick mogirfy or convert)
+- ffmpeg (in PATH)
+
 ## How are the external tools going?
 - Factual responses (straight LLM) (Done!)
 - URL scanning (Cloudflare Radar) (Done!)
 - Stable Diffusion (CLoudflare AI) (Done!)
-- Convert txt file to webpage (WIP) (Done!)
+- Convert txt file to webpage (Done!)
 - Transcribe message (WIP) -> Maybe respond if required? (If voice is a command)
-- Convert filetypes? (HEIC/AVIF breaks for discord...) (Possible hard-code?)
+- Convert filetypes? (HEIC/AVIF breaks for discord...) (Done!)

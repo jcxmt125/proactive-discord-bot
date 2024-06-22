@@ -15,3 +15,13 @@ def imagemagick(filename, targetformat):
             noext += splitname[i]
 
         subprocess.run(["convert",filename,noext+"."+targetformat])
+
+def ffmpeg(filename, targetformat):
+    splitname = filename.split(".")
+
+    noext = ""
+
+    for i in range(len(splitname)-1):
+        noext += splitname[i]
+
+    subprocess.run(["ffmpeg","-i",filename,noext+"."+targetformat])

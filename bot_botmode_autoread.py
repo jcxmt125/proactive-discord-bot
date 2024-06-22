@@ -12,7 +12,7 @@ import cfllm
 from pathlib import Path
 from htmlify import makePage
 from UploadFile import uploadFileToCloud
-import localconverters
+import localconverters, subprocess
 
 load_dotenv()
 
@@ -39,7 +39,7 @@ async def on_message(ctx):
     #Variables to adjust
     #Longer context length seems to cause issues. Let's try 1... (for some commands I might indiviudally make it longer)
     contextLength = 1
-    listOfActions = ["0. Factual responses", "1. URL scanning" "2. Image generation"]
+    listOfActions = ["0. Factual responses", "1. URL scanning" "2. Image generation", "3. Media download"]
 
     channels = channeldatainit
 
@@ -88,7 +88,8 @@ async def on_message(ctx):
     #hardcode
     if correctChannel or verboseMode:
         attachments = ctx.attachments
-        #attachment related hardcoding -> AVIF/HEIF conversion & txt file handling
+        #attachment related hardcoding
+        #AVIF/HEIF conversion, txt file handling, opus file conversion
         if len(attachments) != 0:
             
             listoldfiles = []
@@ -136,6 +137,28 @@ async def on_message(ctx):
                     listnewfilenames.append(htmlLoc)
 
                     listnewlinks.append(link)
+
+                elif ctype[0] == "audio":
+                    if ctype[1] == "opus":
+                        await i.save(fp=filename)
+
+                        listoldfiles.append(filename)
+
+                        localconverters.ffmpeg(filename,"mp3")
+                        
+                        splitname = filename.split(".")
+
+                        noext = ""
+
+                        for i in range(len(splitname)-1):
+                            noext += splitname[i]
+
+                        newfilename = noext+".mp3"
+
+                        print(newfilename)
+
+                        listnewfiles.append(discord.File(newfilename))
+                        listnewfilenames.append(newfilename)
                     
 
             if len(listnewfiles) != 0 or len(listnewlinks) != 0:
@@ -231,6 +254,18 @@ async def on_message(ctx):
                 await ctx.channel.send("Prompt: "+prompt,file=discord.File('output.png'))
 
                 Path.unlink(Path("output.png"))
+            
+            elif interpreted == 3:#media download aka yt-dlp
+                url = URLExtract().find_urls(messagesPlaintextList[-1])[0]
+                
+                subprocess.run(["yt-dlp","-x","-o","video",url])
+
+                localconverters.ffmpeg("video.opus","mp3")
+
+                await ctx.channel.send(file=discord.File("video.mp3"))
+
+                Path.unlink(Path("video.opus"))
+                Path.unlink(Path("video.mp3"))
 
     else:
         return
