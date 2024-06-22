@@ -23,10 +23,12 @@ You will need a .env file though, with the following things:
 - GEMINI_API_KEY: Get one at google AI studio as detailed above. This is also free as long as you don't set billing up.
 - DISCORD_BOT_TOKEN: Get it at Discord Developer portal!
 
+## milestone at 24/06/22
+
 ## How are the external tools going?
 - Factual responses (straight LLM) (Done!)
 - URL scanning (Cloudflare Radar) (Done!)
 - Stable Diffusion (CLoudflare AI) (Done!)
-- Convert txt file to webpage (WIP) (possible hard-code?)
+- Convert txt file to webpage (WIP) (Done!)
 - Transcribe message (WIP) -> Maybe respond if required? (If voice is a command)
 - Convert filetypes? (HEIC/AVIF breaks for discord...) (Possible hard-code?)

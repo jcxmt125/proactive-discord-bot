@@ -1,4 +1,4 @@
-import discord
+import discord, requests
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
@@ -10,6 +10,8 @@ from cfradar import urlScan
 from cfsd import sdgen
 import cfllm
 from pathlib import Path
+from htmlify import makePage
+from UploadFile import uploadFileToCloud
 import localconverters
 
 load_dotenv()
@@ -21,7 +23,7 @@ bot = commands.Bot(command_prefix="?", description="a bot that will respond to y
 
 #load settings from JSON file (it should only use except when running for the first time)
 #guild:channelid = respond only in a channel
-#guild:channelid+0 = non-hardcode response only in channel, hardcode response everywhere
+#guild:channelid+- = non-hardcode response only in channel, hardcode response everywhere
 try:
     with open('data/channels.json') as f:
         channeldatainit = json.load(f)
@@ -74,8 +76,6 @@ async def on_message(ctx):
     if ctx.author == bot.user:
         return
 
-    print(ctx.channel.id, channels[str(ctx.guild.id)][0:-1], channels[str(ctx.guild.id)])
-
     correctChannel = False
     verboseMode = False
 
@@ -88,12 +88,13 @@ async def on_message(ctx):
     #hardcode
     if correctChannel or verboseMode:
         attachments = ctx.attachments
-        #attachment related hardcoding -> AVIF/HEIF conversion
+        #attachment related hardcoding -> AVIF/HEIF conversion & txt file handling
         if len(attachments) != 0:
             
             listoldfiles = []
             listnewfiles = []
             listnewfilenames = []
+            listnewlinks = []
                 
             for i in attachments:
 
@@ -121,9 +122,31 @@ async def on_message(ctx):
 
                         listnewfiles.append(discord.File(newfilename))
                         listnewfilenames.append(newfilename)
+                
+                elif ctype[0] == "text":
+                    await i.save(fp=filename)
 
-            if len(listnewfiles) != 0:
-                await ctx.channel.send(files=listnewfiles)
+                    listoldfiles.append(filename)
+                    
+                    with open(filename, "r", encoding="UTF-8") as txtfile:
+                        htmlLoc = makePage(txtfile.readlines(), description="Automatically generated page from "+filename)
+                    
+                    link = uploadFileToCloud(htmlLoc, "webpage/")
+                    
+                    listnewfilenames.append(htmlLoc)
+
+                    listnewlinks.append(link)
+                    
+
+            if len(listnewfiles) != 0 or len(listnewlinks) != 0:
+                
+                message = ""
+
+                for i in listnewlinks:
+                    message += i
+                    message += "\n"
+                
+                await ctx.channel.send(message, files=listnewfiles)
 
                 #Clean up the downloaded files
                 for i in listoldfiles:
