@@ -29,6 +29,11 @@ Now with many more functions! You'll need the following external dependancies (n
 - ImageMagick (in PATH) (either as magick mogirfy or convert)
 - ffmpeg (in PATH)
 
+## updates at 24/06/23
+
+Now with advanced settings! (Documentation and bugfixes ongoing)
+HelpEverywhere ImageConversion AudioConversion TextPublish EmojiMagnify AIEnabled AIWebScan AIMediaLoad AIResponse AIImagen
+
 ## How are the external tools going?
 - Factual responses (straight LLM) (Done!)
 - URL scanning (Cloudflare Radar) (Done!)

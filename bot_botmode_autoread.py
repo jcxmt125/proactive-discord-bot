@@ -35,19 +35,27 @@ except:
 #TODO make this able to handle multiple requests
 @bot.event
 async def on_message(ctx):
-    #Variables to adjust
-    #Longer context length seems to cause issues. Let's try 1... (for some commands I might indiviudally make it longer)
-    contextLength = 1
-    listOfActions = ["0. Factual responses", "1. URL scanning" "2. Image generation", "3. Media download"]
+    
 
     channels = AllSettings
 
     if ctx.author == bot.user:
         return
 
+    if ctx.content.startswith('$help'):
+        await ctx.channel.send("This bot will help you in various tasks!\
+                               Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\
+                               List of features: HelpEverywhere ImageConversion AudioConversion TextPublish EmojiMagnify\
+                               AI mode will only run if AIEnabled is on, on the channel you ran $initialize in (or changed with $setmainchannel).\
+                               List of features: AIWebScan AIMediaLoad AIResponse AIImagen")
+        return
 
     #Init
     if ctx.content.startswith('$initialize'):
+
+        if str(ctx.guild.id) in channels:
+            await ctx.channel.send("You've already initalized this server!")
+            return
 
         channels[str(ctx.guild.id)] = {
             "HelpEverywhere":False,
@@ -57,6 +65,7 @@ async def on_message(ctx):
             "EmojiMagnify":False,
             "MainChannel":ctx.channel.id,
             "AIEnabled":False,
+            "AIResponse":False,
             "AIWebscan":False,
             "AIMediaload":False,
             "AIImagen":False
@@ -173,10 +182,27 @@ async def on_message(ctx):
     correctChannel = False
     verboseMode = False
 
-    if (str(ctx.channel.id) == channels[str(ctx.guild.id)][0:-1]) or (str(ctx.channel.id) == channels[str(ctx.guild.id)]):
+    #Variables to adjust
+    #Longer context length seems to cause issues. Let's try 1... (for some commands I might indiviudally make it longer)
+    contextLength = 1
+    listOfActions = []
+    
+    if channels[str(ctx.guild.id)]["AIResponse"]:
+        listOfActions.append("0. Factual responses")
+
+    if channels[str(ctx.guild.id)]["AIWebscan"]:
+        listOfActions.append("1. URL scanning")
+
+    if channels[str(ctx.guild.id)]["AIImagen"]:
+        listOfActions.append("2. Image generation")
+    
+    if channels[str(ctx.guild.id)]["AIMediaload"]:
+        listOfActions.append("3. Media download")
+
+    if (str(ctx.channel.id) == str(channels[str(ctx.guild.id)]["MainChannel"])):
         correctChannel = True
 
-    if channels[str(ctx.guild.id)][-1] == "-":
+    if channels[str(ctx.guild.id)]["HelpEverywhere"]:
         verboseMode = True
 
     #hardcode
@@ -196,7 +222,7 @@ async def on_message(ctx):
                 ctype = i.content_type.split('/')
                 filename = i.filename
                 
-                if ctype[0] == "image":
+                if ctype[0] == "image" and channels[str(ctx.guild.id)]["ImageConversion"]:
                     if ctype[1] == "heic" or ctype[1] == "avif":
                         await i.save(fp=filename)
 
@@ -218,7 +244,7 @@ async def on_message(ctx):
                         listnewfiles.append(discord.File(newfilename))
                         listnewfilenames.append(newfilename)
                 
-                elif ctype[0] == "text":
+                elif ctype[0] == "text" and channels[str(ctx.guild.id)]["TextPublish"]:
                     await i.save(fp=filename)
 
                     listoldfiles.append(filename)
@@ -232,7 +258,7 @@ async def on_message(ctx):
 
                     listnewlinks.append(link)
 
-                elif ctype[0] == "audio":
+                elif ctype[0] == "audio" and channels[str(ctx.guild.id)]["AudioConversion"]:
                     if ctype[1] == "opus":
                         await i.save(fp=filename)
 
@@ -278,7 +304,9 @@ async def on_message(ctx):
                         
     #AI responses
 
-    if not correctChannel:
+    print(correctChannel, channels[str(ctx.guild.id)]["AIEnabled"])
+
+    if not (correctChannel and channels[str(ctx.guild.id)]["AIEnabled"]):
         return
 
     channel = ctx.channel
