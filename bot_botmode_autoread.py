@@ -22,16 +22,15 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="?", description="a bot that will respond to you", intents=intents)
 
 #load settings from JSON file (it should only use except when running for the first time)
-#guild:channelid = respond only in a channel
-#guild:channelid+- = non-hardcode response only in channel, hardcode response everywhere
+#guildID:{"HelpEverywhere","ImageConversion","AudioConversion","TextPublish","EmojiMagnify","MainChannel","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen"}
 try:
-    with open('data/channels.json') as f:
-        channeldatainit = json.load(f)
+    with open('data/settings.json') as f:
+        AllSettings = json.load(f)
 except:
-    with open('data/channels.json', 'w') as f:
+    with open('data/settings.json', 'w') as f:
         json.dump({"guild": "channelid"}, f)
-    with open('data/channels.json') as f:
-        channeldatainit = json.load(f)
+    with open('data/settings.json') as f:
+        AllSettings = json.load(f)
 
 #TODO make this able to handle multiple requests
 @bot.event
@@ -41,40 +40,135 @@ async def on_message(ctx):
     contextLength = 1
     listOfActions = ["0. Factual responses", "1. URL scanning" "2. Image generation", "3. Media download"]
 
-    channels = channeldatainit
-
-
-    #single channel mmode setup
-    if ctx.content.startswith('$setup'):
-
-        channels[str(ctx.guild.id)] = str(ctx.channel.id)
-
-        with open('data/channels.json', 'w') as f:
-            json.dump(channels, f)
-
-        with open('data/channels.json') as f:
-            channels = json.load(f)
-
-        await ctx.channel.send("Okay, I'll only reply in this channel!")
-
-        return
-    
-    elif ctx.content.startswith('$verbosesetup'):
-
-        channels[str(ctx.guild.id)] = str(ctx.channel.id)+"-"
-
-        with open('data/channels.json', 'w') as f:
-            json.dump(channels, f)
-
-        with open('data/channels.json') as f:
-            channels = json.load(f)
-
-        await ctx.channel.send("Okay, I'll only do AI responses in this channel! Harcoded responses will run everywhere.")
-
-        return
+    channels = AllSettings
 
     if ctx.author == bot.user:
         return
+
+
+    #Init
+    if ctx.content.startswith('$initialize'):
+
+        channels[str(ctx.guild.id)] = {
+            "HelpEverywhere":False,
+            "ImageConversion":False,
+            "AudioConversion":False,
+            "TextPublish":False,
+            "EmojiMagnify":False,
+            "MainChannel":ctx.channel.id,
+            "AIEnabled":False,
+            "AIWebscan":False,
+            "AIMediaload":False,
+            "AIImagen":False
+        }
+
+        with open('data/settings.json', 'w') as f:
+            json.dump(channels, f)
+
+        with open('data/settings.json') as f:
+            channels = json.load(f)
+
+        await ctx.channel.send("Init complete! Please enable the features you want.")
+
+        return
+    
+    #Change main channel
+    elif ctx.content.startswith('$setmainchannel'):
+
+        try:
+            channels[str(ctx.guild.id)]["MainChannel"] = ctx.channel.id
+
+            with open('data/settings.json', 'w') as f:
+                json.dump(channels, f)
+
+            with open('data/settings.json') as f:
+                channels = json.load(f)
+
+            await ctx.channel.send("This channel set as main!")
+            return
+
+        except:
+            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            return
+
+    #Enable features
+    elif ctx.content.startswith('$enable'):
+
+        try:
+            
+            parameters = ctx.content.split()
+            
+            if len(parameters) == 1:
+                await ctx.channel.send("I need a parameter to adjust!")
+                return
+            
+            del(parameters[0])
+            
+            toSend = ""
+
+            for i in parameters:
+                try:
+                    if channels[str(ctx.guild.id)][i]:
+                        toSend += (i +" is already enabled!\n")
+                    else:
+                        channels[str(ctx.guild.id)][i] = True
+                        toSend += i +" enabled!\n"
+                except:
+                    toSend += ("Invalid parameter: "+ i +"!\n")
+            
+            with open('data/settings.json', 'w') as f:
+                json.dump(channels, f)
+
+            with open('data/settings.json') as f:
+                channels = json.load(f)
+
+            await ctx.channel.send(toSend)
+
+            return
+
+        except:
+            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            return
+        
+    #Disable features
+    elif ctx.content.startswith('$disable'):
+
+        try:
+            
+            parameters = ctx.content.split()
+            
+            if len(parameters) == 1:
+                await ctx.channel.send("I need a parameter to adjust!")
+                return
+            
+            del(parameters[0])
+            
+            toSend = ""
+
+            for i in parameters:
+                try:
+                    if not channels[str(ctx.guild.id)][i]:
+                        toSend += (i +" is already disabled!\n")
+                    else:
+                        channels[str(ctx.guild.id)][i] = False
+                        toSend += i +" disabled!\n"
+                except:
+                    toSend += ("Invalid parameter: "+ i +"!\n")
+            
+            with open('data/settings.json', 'w') as f:
+                json.dump(channels, f)
+
+            with open('data/settings.json') as f:
+                channels = json.load(f)
+
+            await ctx.channel.send(toSend)
+            
+            return
+
+        except:
+            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            return
+
 
     correctChannel = False
     verboseMode = False
