@@ -52,15 +52,16 @@ async def on_message(ctx):
     if ctx.content.startswith('$help'):
         await ctx.channel.send("This bot will help you in various tasks!\n\
 Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\n\
-List of features: HelpEverywhere ImageConversion AudioConversion TextPublish\n\
+List of features: HelpEverywhere ImageConversion AudioConversion APNGConversion TextPublish\n\
 AI mode will only run if AIEnabled is on, on the channel you ran $initialize in (or changed with $setmainchannel).\n\
 List of features: AIWebscan AIMediaload AIResponse AIImagen")
         return
 
     if ctx.content.startswith('$migrate'):
-        for i in ["HelpEverywhere","ImageConversion","AudioConversion","TextPublish","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen","AIAudioTranscribe"]:
+        for i in ["HelpEverywhere","ImageConversion","AudioConversion","APNGConversion","TextPublish","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen","AIAudioTranscribe"]:
             if i not in channels[str(ctx.guild.id)]:
                 channels[str(ctx.guild.id)][i] = False
+        return
 
 
     #Init
@@ -74,6 +75,7 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
             "HelpEverywhere":False,
             "ImageConversion":False,
             "AudioConversion":False,
+            "APNGConversion":False,
             "TextPublish":False,
             "MainChannel":ctx.channel.id,
             "AIEnabled":False,
@@ -191,13 +193,33 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
             await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
             return
 
+    elif ctx.content.startswith('$listsettings'):
+        
+        construct = ""
+        
+        for i in channels[str(ctx.guild.id)]:
+            construct += (i +": "+ str(channels[str(ctx.guild.id)][i])+"\n")
+
+        await ctx.channel.send(construct)
+
+        return
+    
+    elif ctx.content.startswith('$ping'):
+
+        await ctx.channel.send("Running at "+str(round(bot.latency * 1000))+" ms!")
+
+        return
+    
+    elif ctx.content.startswith("$rickroll"):
+
+        await ctx.channel.send("https://random.jclink.link/serve-rickroll")
+
+        return
 
     correctChannel = False
     verboseMode = False
 
-    #Variables to adjust
-    #Longer context length seems to cause issues. Let's try 1... (for some commands I might indiviudally make it longer)
-    contextLength = 1
+    
     listOfActions = []
     
     if channels[str(ctx.guild.id)]["AIResponse"]:
@@ -236,6 +258,7 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
             for i in attachments:
 
                 ctype = i.content_type.split('/')
+                #print(ctype)
                 filename = i.filename
                 
                 if ctype[0] == "image" and channels[str(ctx.guild.id)]["ImageConversion"]:
@@ -295,6 +318,28 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
 
                         listnewfiles.append(discord.File(newfilename))
                         listnewfilenames.append(newfilename)
+                
+                elif ctype[0] == "image" and channels[str(ctx.guild.id)]["APNGConversion"]:
+                    if ctype[1] == "vnd.mozilla.apng":
+                        await i.save(fp=filename)
+
+                        listoldfiles.append(filename)
+
+                        localconverters.ffmpeg(filename,"webm")
+                        
+                        splitname = filename.split(".")
+
+                        noext = ""
+
+                        for i in range(len(splitname)-1):
+                            noext += splitname[i]
+
+                        newfilename = noext+".webm"
+
+                        print(newfilename)
+
+                        listnewfiles.append(discord.File(newfilename))
+                        listnewfilenames.append(newfilename)
                     
 
             if len(listnewfiles) != 0 or len(listnewlinks) != 0:
@@ -315,9 +360,14 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
 
                     return
                 
-            
 
-                        
+    #AI context for figuring out what to do
+    contextLength = 1
+
+    attachmentSearchContextlength = 5
+
+    extendedContextLength = 3
+
     #AI responses
 
     if not (correctChannel and channels[str(ctx.guild.id)]["AIEnabled"]):
@@ -337,8 +387,6 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
     print(messagesPlaintextList)
 
     resp = nltocommand.shouldIRespond(listOfActions, messagesPlaintextList)
-
-    print(resp)
 
     if resp >= 0:#Respond!
         async with ctx.channel.typing():
@@ -411,7 +459,7 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
                     await ctx.send("I'll try to parse through a few previous messages to find what file you want transcribed...")
                     channel = ctx.channel
                     try:
-                        messages = [message async for message in channel.history(limit=5)]
+                        messages = [message async for message in channel.history(limit=attachmentSearchContextlength)]
                     except discord.HTTPException as e:
                         await ctx.send(f"An error occurred: {e}")
                         return
@@ -432,6 +480,8 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
                         await ctx.send("> " + whispercf.cfwhisper(i.url)["result"]["text"])
                     except:
                         await ctx.send("Sorry, something went wrong while trying to transcribe the file.")
+
+        return
 
     else:
         return
