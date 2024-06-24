@@ -52,13 +52,19 @@ async def on_message(ctx):
     if ctx.content.startswith('$help'):
         await ctx.channel.send("This bot will help you in various tasks!\
                                Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\
-                               List of features: HelpEverywhere ImageConversion AudioConversion TextPublish EmojiMagnify\
+                               List of features: HelpEverywhere ImageConversion AudioConversion TextPublish\
                                AI mode will only run if AIEnabled is on, on the channel you ran $initialize in (or changed with $setmainchannel).\
                                List of features: AIWebScan AIMediaLoad AIResponse AIImagen")
         return
 
+    if ctx.content.startswith('$migrate'):
+        for i in ["HelpEverywhere","ImageConversion","AudioConversion","TextPublish","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen","AIAudioTranscribe"]:
+            if i not in channels[str(ctx.guild.id)]:
+                channels[str(ctx.guild.id)][i] = False
+
+
     #Init
-    if ctx.content.startswith('$initialize'):
+    elif ctx.content.startswith('$initialize'):
 
         if str(ctx.guild.id) in channels:
             await ctx.channel.send("You've already initalized this server!")
@@ -69,7 +75,6 @@ async def on_message(ctx):
             "ImageConversion":False,
             "AudioConversion":False,
             "TextPublish":False,
-            "EmojiMagnify":False,
             "MainChannel":ctx.channel.id,
             "AIEnabled":False,
             "AIResponse":False,
@@ -314,8 +319,6 @@ async def on_message(ctx):
 
                         
     #AI responses
-
-    print(correctChannel, channels[str(ctx.guild.id)]["AIEnabled"])
 
     if not (correctChannel and channels[str(ctx.guild.id)]["AIEnabled"]):
         return
