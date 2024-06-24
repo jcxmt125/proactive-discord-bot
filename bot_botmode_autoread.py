@@ -8,7 +8,7 @@ import json
 from urlextract import URLExtract
 from cfradar import urlScan
 from cfsd import sdgen
-import cfllm
+import cfllm, whispercf
 from pathlib import Path
 from htmlify import makePage
 from UploadFile import uploadFileToCloud
@@ -27,10 +27,17 @@ try:
     with open('data/settings.json') as f:
         AllSettings = json.load(f)
 except:
-    with open('data/settings.json', 'w') as f:
-        json.dump({"guild": "channelid"}, f)
-    with open('data/settings.json') as f:
-        AllSettings = json.load(f)
+    try:
+        with open('data/settings.json', 'w') as f:
+            json.dump({"guild": "settings"}, f, indent=2)
+        with open('data/settings.json') as f:
+            AllSettings = json.load(f)
+    except:
+        os.mkdir("data")
+        with open('data/settings.json', 'w') as f:
+            json.dump({"guild": "settings"}, f, indent=2)
+        with open('data/settings.json') as f:
+            AllSettings = json.load(f)
 
 #TODO make this able to handle multiple requests
 @bot.event
@@ -68,11 +75,12 @@ async def on_message(ctx):
             "AIResponse":False,
             "AIWebscan":False,
             "AIMediaload":False,
-            "AIImagen":False
+            "AIImagen":False,
+            "AIAudioTranscribe":False
         }
 
         with open('data/settings.json', 'w') as f:
-            json.dump(channels, f)
+            json.dump(channels, f, indent=2)
 
         with open('data/settings.json') as f:
             channels = json.load(f)
@@ -88,7 +96,7 @@ async def on_message(ctx):
             channels[str(ctx.guild.id)]["MainChannel"] = ctx.channel.id
 
             with open('data/settings.json', 'w') as f:
-                json.dump(channels, f)
+                json.dump(channels, f, indent=2)
 
             with open('data/settings.json') as f:
                 channels = json.load(f)
@@ -126,7 +134,7 @@ async def on_message(ctx):
                     toSend += ("Invalid parameter: "+ i +"!\n")
             
             with open('data/settings.json', 'w') as f:
-                json.dump(channels, f)
+                json.dump(channels, f, indent=2)
 
             with open('data/settings.json') as f:
                 channels = json.load(f)
@@ -165,7 +173,7 @@ async def on_message(ctx):
                     toSend += ("Invalid parameter: "+ i +"!\n")
             
             with open('data/settings.json', 'w') as f:
-                json.dump(channels, f)
+                json.dump(channels, f, indent=2)
 
             with open('data/settings.json') as f:
                 channels = json.load(f)
@@ -198,6 +206,9 @@ async def on_message(ctx):
     
     if channels[str(ctx.guild.id)]["AIMediaload"]:
         listOfActions.append("3. Media download")
+
+    if channels[str(ctx.guild.id)]["AIAudioTranscribe"]:
+        listOfActions.append("4. Audio Transcription")
 
     if (str(ctx.channel.id) == str(channels[str(ctx.guild.id)]["MainChannel"])):
         correctChannel = True
@@ -388,6 +399,36 @@ async def on_message(ctx):
 
                 Path.unlink(Path("video.opus"))
                 Path.unlink(Path("video.mp3"))
+            
+            elif interpreted == 4:#Transcribe with Whisper
+
+                attachments = ctx.message.attachments
+
+                if len(attachments) == 0:
+                    await ctx.send("I'll try to parse through a few previous messages to find what file you want transcribed...")
+                    channel = ctx.channel
+                    try:
+                        messages = [message async for message in channel.history(limit=5)]
+                    except discord.HTTPException as e:
+                        await ctx.send(f"An error occurred: {e}")
+                        return
+
+                    for message in messages:
+                        if len(message.attachments) != 0:
+                            attachments = message.attachments
+                            break
+                    
+                    if len(attachments) == 0:
+                        await ctx.send("I was unable to find an audio file to transcribe. Please try again.")
+                        return
+                        
+                for i in attachments:
+                    try:
+                        if not (str(i.content_type).split("/")[0] == "audio" ):
+                            continue
+                        await ctx.send("> " + whispercf.cfwhisper(i.url)["result"]["text"])
+                    except:
+                        await ctx.send("Sorry, something went wrong while trying to transcribe the file.")
 
     else:
         return

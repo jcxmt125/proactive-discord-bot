@@ -2,13 +2,13 @@
 This is a very work-in-progress project.
 The goals are to:
 - Make a bot that will respond to you when necessary (Kinda done!)
-- Remember who you are (Paused)
+- Remember who you are (Abandoned; will be implemented in a seperate bot)
 - Possibly some tools when required? (WIP)
 - Make this bot runnable in... *very* resource constrained (aka GCloud e2-micro) environments. (Seems to work)
 
 To achieve this, we'll likely have to make the bot read every message it gets and figure out when best to respond...
 LLMs will likely be used for all decision making.
-The last part might create some OS headaches... let's see where this takes us!
+APIs will be used in most cases, local converters in some limited cases (burstable)
 
 By the way, watch for egress when deploying this on a server... especially free tier.
 
@@ -26,18 +26,28 @@ You will need a .env file though, with the following things:
 ## milestone at 24/06/22
 
 Now with many more functions! You'll need the following external dependancies (non-python):
-- ImageMagick (in PATH) (either as magick mogirfy or convert)
+- ImageMagick (in PATH) (either as magick mogrify or convert)
 - ffmpeg (in PATH)
 
-## updates at 24/06/23
+## updating...
 
 Now with advanced settings! (Documentation and bugfixes ongoing)
-HelpEverywhere ImageConversion AudioConversion TextPublish EmojiMagnify AIEnabled AIWebScan AIMediaLoad AIResponse AIImagen
+- HelpEverywhere: This will allow the bot to respond with hardcoded responses anywhere. (If off: only in the specified channel)
+    - ImageConversion: The bot will auto-convert heic and avif files to webp
+    - AudioConversion: The bot will auto-convert opus files to mp3
+    - TextPublish: The bot will automatically publish a txt file as a webpage
+    - EmojiMagnify: The bot will detect, delete, and magnify messages containing just the emoji
+- AIEnabled: Enables AI scanning in the specified channel to respond with more features. (It won't run anywhere else)
+    - AIWebScan: detects, extracts, and scans websites for safety
+    - AIMediaLoad: downloads audio tracks from youtube
+    - AIResponse: AI responses for factual questions
+    - AIImagen: Generates images with Stable Diffusion
+    - AIAudioTrancscribe: Transcribes audio when prompted
 
 ## How are the external tools going?
 - Factual responses (straight LLM) (Done!)
 - URL scanning (Cloudflare Radar) (Done!)
 - Stable Diffusion (CLoudflare AI) (Done!)
 - Convert txt file to webpage (Done!)
-- Transcribe message (WIP) -> Maybe respond if required? (If voice is a command)
+- Transcribe message (Done!) -> Maybe respond if required? (If voice is a command)
 - Convert filetypes? (HEIC/AVIF breaks for discord...) (Done!)
