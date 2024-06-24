@@ -8,7 +8,7 @@ import json
 from urlextract import URLExtract
 from cfradar import urlScan
 from cfsd import sdgen
-import cfllm
+import cfllm, whispercf
 from pathlib import Path
 from htmlify import makePage
 from UploadFile import uploadFileToCloud
@@ -22,67 +22,203 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="?", description="a bot that will respond to you", intents=intents)
 
 #load settings from JSON file (it should only use except when running for the first time)
-#guild:channelid = respond only in a channel
-#guild:channelid+- = non-hardcode response only in channel, hardcode response everywhere
+#guildID:{"HelpEverywhere","ImageConversion","AudioConversion","TextPublish","EmojiMagnify","MainChannel","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen"}
 try:
-    with open('data/channels.json') as f:
-        channeldatainit = json.load(f)
+    with open('data/settings.json') as f:
+        AllSettings = json.load(f)
 except:
-    with open('data/channels.json', 'w') as f:
-        json.dump({"guild": "channelid"}, f)
-    with open('data/channels.json') as f:
-        channeldatainit = json.load(f)
+    try:
+        with open('data/settings.json', 'w') as f:
+            json.dump({"guild": "settings"}, f, indent=2)
+        with open('data/settings.json') as f:
+            AllSettings = json.load(f)
+    except:
+        os.mkdir("data")
+        with open('data/settings.json', 'w') as f:
+            json.dump({"guild": "settings"}, f, indent=2)
+        with open('data/settings.json') as f:
+            AllSettings = json.load(f)
 
 #TODO make this able to handle multiple requests
 @bot.event
 async def on_message(ctx):
-    #Variables to adjust
-    #Longer context length seems to cause issues. Let's try 1... (for some commands I might indiviudally make it longer)
-    contextLength = 1
-    listOfActions = ["0. Factual responses", "1. URL scanning" "2. Image generation", "3. Media download"]
-
-    channels = channeldatainit
-
-
-    #single channel mmode setup
-    if ctx.content.startswith('$setup'):
-
-        channels[str(ctx.guild.id)] = str(ctx.channel.id)
-
-        with open('data/channels.json', 'w') as f:
-            json.dump(channels, f)
-
-        with open('data/channels.json') as f:
-            channels = json.load(f)
-
-        await ctx.channel.send("Okay, I'll only reply in this channel!")
-
-        return
     
-    elif ctx.content.startswith('$verbosesetup'):
 
-        channels[str(ctx.guild.id)] = str(ctx.channel.id)+"-"
-
-        with open('data/channels.json', 'w') as f:
-            json.dump(channels, f)
-
-        with open('data/channels.json') as f:
-            channels = json.load(f)
-
-        await ctx.channel.send("Okay, I'll only do AI responses in this channel! Harcoded responses will run everywhere.")
-
-        return
+    channels = AllSettings
 
     if ctx.author == bot.user:
         return
 
+    if ctx.content.startswith('$help'):
+        await ctx.channel.send("This bot will help you in various tasks!\
+                               Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\
+                               List of features: HelpEverywhere ImageConversion AudioConversion TextPublish\
+                               AI mode will only run if AIEnabled is on, on the channel you ran $initialize in (or changed with $setmainchannel).\
+                               List of features: AIWebScan AIMediaLoad AIResponse AIImagen")
+        return
+
+    if ctx.content.startswith('$migrate'):
+        for i in ["HelpEverywhere","ImageConversion","AudioConversion","TextPublish","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen","AIAudioTranscribe"]:
+            if i not in channels[str(ctx.guild.id)]:
+                channels[str(ctx.guild.id)][i] = False
+
+
+    #Init
+    elif ctx.content.startswith('$initialize'):
+
+        if str(ctx.guild.id) in channels:
+            await ctx.channel.send("You've already initalized this server!")
+            return
+
+        channels[str(ctx.guild.id)] = {
+            "HelpEverywhere":False,
+            "ImageConversion":False,
+            "AudioConversion":False,
+            "TextPublish":False,
+            "MainChannel":ctx.channel.id,
+            "AIEnabled":False,
+            "AIResponse":False,
+            "AIWebscan":False,
+            "AIMediaload":False,
+            "AIImagen":False,
+            "AIAudioTranscribe":False
+        }
+
+        with open('data/settings.json', 'w') as f:
+            json.dump(channels, f, indent=2)
+
+        with open('data/settings.json') as f:
+            channels = json.load(f)
+
+        await ctx.channel.send("Init complete! Please enable the features you want.")
+
+        return
+    
+    #Change main channel
+    elif ctx.content.startswith('$setmainchannel'):
+
+        try:
+            channels[str(ctx.guild.id)]["MainChannel"] = ctx.channel.id
+
+            with open('data/settings.json', 'w') as f:
+                json.dump(channels, f, indent=2)
+
+            with open('data/settings.json') as f:
+                channels = json.load(f)
+
+            await ctx.channel.send("This channel set as main!")
+            return
+
+        except:
+            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            return
+
+    #Enable features
+    elif ctx.content.startswith('$enable'):
+
+        try:
+            
+            parameters = ctx.content.split()
+            
+            if len(parameters) == 1:
+                await ctx.channel.send("I need a parameter to adjust!")
+                return
+            
+            del(parameters[0])
+            
+            toSend = ""
+
+            for i in parameters:
+                try:
+                    if channels[str(ctx.guild.id)][i]:
+                        toSend += (i +" is already enabled!\n")
+                    else:
+                        channels[str(ctx.guild.id)][i] = True
+                        toSend += i +" enabled!\n"
+                except:
+                    toSend += ("Invalid parameter: "+ i +"!\n")
+            
+            with open('data/settings.json', 'w') as f:
+                json.dump(channels, f, indent=2)
+
+            with open('data/settings.json') as f:
+                channels = json.load(f)
+
+            await ctx.channel.send(toSend)
+
+            return
+
+        except:
+            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            return
+        
+    #Disable features
+    elif ctx.content.startswith('$disable'):
+
+        try:
+            
+            parameters = ctx.content.split()
+            
+            if len(parameters) == 1:
+                await ctx.channel.send("I need a parameter to adjust!")
+                return
+            
+            del(parameters[0])
+            
+            toSend = ""
+
+            for i in parameters:
+                try:
+                    if not channels[str(ctx.guild.id)][i]:
+                        toSend += (i +" is already disabled!\n")
+                    else:
+                        channels[str(ctx.guild.id)][i] = False
+                        toSend += i +" disabled!\n"
+                except:
+                    toSend += ("Invalid parameter: "+ i +"!\n")
+            
+            with open('data/settings.json', 'w') as f:
+                json.dump(channels, f, indent=2)
+
+            with open('data/settings.json') as f:
+                channels = json.load(f)
+
+            await ctx.channel.send(toSend)
+            
+            return
+
+        except:
+            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            return
+
+
     correctChannel = False
     verboseMode = False
 
-    if (str(ctx.channel.id) == channels[str(ctx.guild.id)][0:-1]) or (str(ctx.channel.id) == channels[str(ctx.guild.id)]):
+    #Variables to adjust
+    #Longer context length seems to cause issues. Let's try 1... (for some commands I might indiviudally make it longer)
+    contextLength = 1
+    listOfActions = []
+    
+    if channels[str(ctx.guild.id)]["AIResponse"]:
+        listOfActions.append("0. Factual responses")
+
+    if channels[str(ctx.guild.id)]["AIWebscan"]:
+        listOfActions.append("1. URL scanning")
+
+    if channels[str(ctx.guild.id)]["AIImagen"]:
+        listOfActions.append("2. Image generation")
+    
+    if channels[str(ctx.guild.id)]["AIMediaload"]:
+        listOfActions.append("3. Media download")
+
+    if channels[str(ctx.guild.id)]["AIAudioTranscribe"]:
+        listOfActions.append("4. Audio Transcription")
+
+    if (str(ctx.channel.id) == str(channels[str(ctx.guild.id)]["MainChannel"])):
         correctChannel = True
 
-    if channels[str(ctx.guild.id)][-1] == "-":
+    if channels[str(ctx.guild.id)]["HelpEverywhere"]:
         verboseMode = True
 
     #hardcode
@@ -102,7 +238,7 @@ async def on_message(ctx):
                 ctype = i.content_type.split('/')
                 filename = i.filename
                 
-                if ctype[0] == "image":
+                if ctype[0] == "image" and channels[str(ctx.guild.id)]["ImageConversion"]:
                     if ctype[1] == "heic" or ctype[1] == "avif":
                         await i.save(fp=filename)
 
@@ -124,7 +260,7 @@ async def on_message(ctx):
                         listnewfiles.append(discord.File(newfilename))
                         listnewfilenames.append(newfilename)
                 
-                elif ctype[0] == "text":
+                elif ctype[0] == "text" and channels[str(ctx.guild.id)]["TextPublish"]:
                     await i.save(fp=filename)
 
                     listoldfiles.append(filename)
@@ -138,7 +274,7 @@ async def on_message(ctx):
 
                     listnewlinks.append(link)
 
-                elif ctype[0] == "audio":
+                elif ctype[0] == "audio" and channels[str(ctx.guild.id)]["AudioConversion"]:
                     if ctype[1] == "opus":
                         await i.save(fp=filename)
 
@@ -184,7 +320,7 @@ async def on_message(ctx):
                         
     #AI responses
 
-    if not correctChannel:
+    if not (correctChannel and channels[str(ctx.guild.id)]["AIEnabled"]):
         return
 
     channel = ctx.channel
@@ -266,6 +402,36 @@ async def on_message(ctx):
 
                 Path.unlink(Path("video.opus"))
                 Path.unlink(Path("video.mp3"))
+            
+            elif interpreted == 4:#Transcribe with Whisper
+
+                attachments = ctx.message.attachments
+
+                if len(attachments) == 0:
+                    await ctx.send("I'll try to parse through a few previous messages to find what file you want transcribed...")
+                    channel = ctx.channel
+                    try:
+                        messages = [message async for message in channel.history(limit=5)]
+                    except discord.HTTPException as e:
+                        await ctx.send(f"An error occurred: {e}")
+                        return
+
+                    for message in messages:
+                        if len(message.attachments) != 0:
+                            attachments = message.attachments
+                            break
+                    
+                    if len(attachments) == 0:
+                        await ctx.send("I was unable to find an audio file to transcribe. Please try again.")
+                        return
+                        
+                for i in attachments:
+                    try:
+                        if not (str(i.content_type).split("/")[0] == "audio" ):
+                            continue
+                        await ctx.send("> " + whispercf.cfwhisper(i.url)["result"]["text"])
+                    except:
+                        await ctx.send("Sorry, something went wrong while trying to transcribe the file.")
 
     else:
         return
