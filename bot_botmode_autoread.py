@@ -50,11 +50,11 @@ async def on_message(ctx):
         return
 
     if ctx.content.startswith('$help'):
-        await ctx.channel.send("This bot will help you in various tasks!\
-                               Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\
-                               List of features: HelpEverywhere ImageConversion AudioConversion TextPublish\
-                               AI mode will only run if AIEnabled is on, on the channel you ran $initialize in (or changed with $setmainchannel).\
-                               List of features: AIWebScan AIMediaLoad AIResponse AIImagen")
+        await ctx.channel.send("This bot will help you in various tasks!\n\
+Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\n\
+List of features: HelpEverywhere ImageConversion AudioConversion TextPublish\n\
+AI mode will only run if AIEnabled is on, on the channel you ran $initialize in (or changed with $setmainchannel).\n\
+List of features: AIWebscan AIMediaload AIResponse AIImagen")
         return
 
     if ctx.content.startswith('$migrate'):
