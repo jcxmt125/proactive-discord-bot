@@ -22,22 +22,33 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="?", description="a bot that will respond to you", intents=intents)
 
 #load settings from JSON file (it should only use except when running for the first time)
-#guildID:{"HelpEverywhere","ImageConversion","AudioConversion","TextPublish","EmojiMagnify","MainChannel","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen"}
 try:
     with open('data/settings.json') as f:
         AllSettings = json.load(f)
 except:
     try:
         with open('data/settings.json', 'w') as f:
-            json.dump({"guild": "settings"}, f, indent=2)
+            json.dump({"guild": {"settings":True}}, f, indent=2)
         with open('data/settings.json') as f:
             AllSettings = json.load(f)
     except:
         os.mkdir("data")
         with open('data/settings.json', 'w') as f:
-            json.dump({"guild": "settings"}, f, indent=2)
+            json.dump({"guild": {"settings":True}}, f, indent=2)
         with open('data/settings.json') as f:
             AllSettings = json.load(f)
+
+featuresList = ["HelpEverywhere","ImageConversion","AudioConversion","APNGConversion","TextPublish","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen","AIAudioTranscribe"]
+
+#auto-migrate
+for i in AllSettings:
+    for j in featuresList:
+        if j not in AllSettings[i]:
+            AllSettings[i][j] = False
+            with open('data/settings.json', 'w') as f:
+                json.dump(AllSettings, f, indent=2)
+            with open('data/settings.json') as f:
+                AllSettings = json.load(f)
 
 #TODO make this able to handle multiple requests
 @bot.event
@@ -54,11 +65,13 @@ async def on_message(ctx):
 Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\n\
 List of features: HelpEverywhere ImageConversion AudioConversion APNGConversion TextPublish\n\
 AI mode will only run if AIEnabled is on, on the channel you ran $initialize in (or changed with $setmainchannel).\n\
-List of features: AIWebscan AIMediaload AIResponse AIImagen")
+List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
         return
+    
+    
 
     if ctx.content.startswith('$migrate'):
-        for i in ["HelpEverywhere","ImageConversion","AudioConversion","APNGConversion","TextPublish","AIEnabled","AIWebScan","AIMediaLoad","AIResponse","AIImagen","AIAudioTranscribe"]:
+        for i in featuresList:
             if i not in channels[str(ctx.guild.id)]:
                 channels[str(ctx.guild.id)][i] = False
         return
@@ -72,19 +85,11 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
             return
 
         channels[str(ctx.guild.id)] = {
-            "HelpEverywhere":False,
-            "ImageConversion":False,
-            "AudioConversion":False,
-            "APNGConversion":False,
-            "TextPublish":False,
-            "MainChannel":ctx.channel.id,
-            "AIEnabled":False,
-            "AIResponse":False,
-            "AIWebscan":False,
-            "AIMediaload":False,
-            "AIImagen":False,
-            "AIAudioTranscribe":False
+            "MainChannel":ctx.channel.id
         }
+
+        for i in featuresList:
+            channels[str(ctx.guild.id)][i] = False
 
         with open('data/settings.json', 'w') as f:
             json.dump(channels, f, indent=2)
@@ -225,13 +230,13 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
     if channels[str(ctx.guild.id)]["AIResponse"]:
         listOfActions.append("0. Factual responses")
 
-    if channels[str(ctx.guild.id)]["AIWebscan"]:
+    if channels[str(ctx.guild.id)]["AIWebScan"]:
         listOfActions.append("1. URL scanning")
 
     if channels[str(ctx.guild.id)]["AIImagen"]:
         listOfActions.append("2. Image generation")
     
-    if channels[str(ctx.guild.id)]["AIMediaload"]:
+    if channels[str(ctx.guild.id)]["AIMediaLoad"]:
         listOfActions.append("3. Media download")
 
     if channels[str(ctx.guild.id)]["AIAudioTranscribe"]:
@@ -247,7 +252,7 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
     if correctChannel or verboseMode:
         attachments = ctx.attachments
         #attachment related hardcoding
-        #AVIF/HEIF conversion, txt file handling, opus file conversion
+        #AVIF/HEIF/APNG conversion, txt file handling, opus file conversion
         if len(attachments) != 0:
             
             listoldfiles = []
@@ -258,7 +263,6 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
             for i in attachments:
 
                 ctype = i.content_type.split('/')
-                #print(ctype)
                 filename = i.filename
                 
                 if ctype[0] == "image" and channels[str(ctx.guild.id)]["ImageConversion"]:
@@ -319,7 +323,7 @@ List of features: AIWebscan AIMediaload AIResponse AIImagen")
                         listnewfiles.append(discord.File(newfilename))
                         listnewfilenames.append(newfilename)
                 
-                elif ctype[0] == "image" and channels[str(ctx.guild.id)]["APNGConversion"]:
+                if ctype[0] == "image" and channels[str(ctx.guild.id)]["APNGConversion"]:
                     if ctype[1] == "vnd.mozilla.apng":
                         await i.save(fp=filename)
 
