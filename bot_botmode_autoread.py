@@ -60,30 +60,8 @@ async def on_message(ctx):
     if ctx.author == bot.user:
         return
 
-    if ctx.content.startswith('$help'):
-        await ctx.channel.send("This bot will help you in various tasks!\n\
-Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\n\
-List of features: HelpEverywhere ImageConversion AudioConversion APNGConversion TextPublish\n\
-AI mode will only run if AIEnabled is on, on the channel you ran $initialize in (or changed with $setmainchannel).\n\
-List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
-        return
-    
-    
-
-    if ctx.content.startswith('$migrate'):
-        for i in featuresList:
-            if i not in channels[str(ctx.guild.id)]:
-                channels[str(ctx.guild.id)][i] = False
-        return
-
-
-    #Init
-    elif ctx.content.startswith('$initialize'):
-
-        if str(ctx.guild.id) in channels:
-            await ctx.channel.send("You've already initalized this server!")
-            return
-
+    #auto-init (silent)
+    if not ctx.guild.id in AllSettings:
         channels[str(ctx.guild.id)] = {
             "MainChannel":ctx.channel.id
         }
@@ -97,12 +75,16 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
         with open('data/settings.json') as f:
             channels = json.load(f)
 
-        await ctx.channel.send("Init complete! Please enable the features you want.")
-
+    if ctx.content.startswith('$help'):
+        await ctx.channel.send("This bot will help you in various tasks!\n\
+Basic/Hardcode will always run in your set up channel. Enable `HelpEverywhere` to allow bot to respond everywhere.\n\
+List of features: HelpEverywhere ImageConversion AudioConversion APNGConversion TextPublish\n\
+AI mode will only run if AIEnabled is on, on the channel the bot saw the first message at by default. Change this with $initialize or $setmainchannel.\n\
+List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
         return
     
     #Change main channel
-    elif ctx.content.startswith('$setmainchannel'):
+    elif ctx.content.startswith('$setmainchannel') or ctx.content.startswith('$initialize'):
 
         try:
             channels[str(ctx.guild.id)]["MainChannel"] = ctx.channel.id
@@ -117,7 +99,7 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
             return
 
         except:
-            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            await ctx.channel.send("Something went wrong! Please contact the developer.")
             return
 
     #Enable features
@@ -131,6 +113,45 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
                 await ctx.channel.send("I need a parameter to adjust!")
                 return
             
+            elif len(parameters) == 2:
+                if parameters[1] == "all":
+                    for i in featuresList:
+                        channels[str(ctx.guild.id)][i] = True
+                    with open('data/settings.json', 'w') as f:
+                        json.dump(channels, f, indent=2)
+
+                    with open('data/settings.json') as f:
+                        channels = json.load(f)
+
+                    await ctx.channel.send("All features enabled!")
+                    return
+                elif parameters[1] == "AI":
+                    for i in featuresList:
+                        if i[0:2] == "AI":
+                            channels[str(ctx.guild.id)][i] = True
+
+                    with open('data/settings.json', 'w') as f:
+                        json.dump(channels, f, indent=2)
+
+                    with open('data/settings.json') as f:
+                        channels = json.load(f)
+
+                    await ctx.channel.send("All AI features enabled!")
+                    return
+                elif parameters[2] == "proactive":
+                    for i in featuresList:
+                        if i[0:2] != "AI":
+                            channels[str(ctx.guild.id)][i] = True
+
+                    with open('data/settings.json', 'w') as f:
+                        json.dump(channels, f, indent=2)
+
+                    with open('data/settings.json') as f:
+                        channels = json.load(f)
+
+                    await ctx.channel.send("All proactive features enabled!")
+                    return
+
             del(parameters[0])
             
             toSend = ""
@@ -156,7 +177,7 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
             return
 
         except:
-            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            await ctx.channel.send("Something went wrong! Please contact the developer.")
             return
         
     #Disable features
@@ -169,6 +190,45 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
             if len(parameters) == 1:
                 await ctx.channel.send("I need a parameter to adjust!")
                 return
+            
+            elif len(parameters) == 2:
+                if parameters[1] == "all":
+                    for i in featuresList:
+                        channels[str(ctx.guild.id)][i] = False
+                    with open('data/settings.json', 'w') as f:
+                        json.dump(channels, f, indent=2)
+
+                    with open('data/settings.json') as f:
+                        channels = json.load(f)
+
+                    await ctx.channel.send("All features enabled!")
+                    return
+                elif parameters[1] == "AI":
+                    for i in featuresList:
+                        if i[0:2] == "AI":
+                            channels[str(ctx.guild.id)][i] = False
+
+                    with open('data/settings.json', 'w') as f:
+                        json.dump(channels, f, indent=2)
+
+                    with open('data/settings.json') as f:
+                        channels = json.load(f)
+
+                    await ctx.channel.send("All AI features enabled!")
+                    return
+                elif parameters[2] == "proactive":
+                    for i in featuresList:
+                        if i[0:2] != "AI":
+                            channels[str(ctx.guild.id)][i] = False
+
+                    with open('data/settings.json', 'w') as f:
+                        json.dump(channels, f, indent=2)
+
+                    with open('data/settings.json') as f:
+                        channels = json.load(f)
+
+                    await ctx.channel.send("All proactive features enabled!")
+                    return
             
             del(parameters[0])
             
@@ -195,7 +255,7 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
             return
 
         except:
-            await ctx.channel.send("I don't think I know this server yet! Please $initialize.")
+            await ctx.channel.send("Something went wrong! Please contact the developer.")
             return
 
     elif ctx.content.startswith('$listsettings'):
