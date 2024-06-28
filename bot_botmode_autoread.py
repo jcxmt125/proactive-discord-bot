@@ -1,18 +1,17 @@
-import discord, requests
+#actual python modules
+import discord, os, json, subprocess
 from discord.ext import commands
-import os
 from dotenv import load_dotenv
-import nltocommand
+from pathlib import Path
+
+#my own python files
 from geminillm import gemrequest
-import json
 from urlextract import URLExtract
 from cfradar import urlScan
 from cfsd import sdgen
-import cfllm, whispercf
-from pathlib import Path
 from htmlify import makePage
 from UploadFile import uploadFileToCloud
-import localconverters, subprocess
+import localconverters, nltocommand, cfllm, whispercf
 
 load_dotenv()
 
@@ -21,16 +20,26 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="?", description="a bot that will respond to you", intents=intents)
 
-#load settings from JSON file (it should only use except when running for the first time)
+#load settings from JSON file (it should only use "except" when running for the first time)
 try:
     with open('data/settings.json') as f:
         AllSettings = json.load(f)
+    
+    #automatically fix compatibility issues with very old setting file
+    if AllSettings["guild"] == "settings":
+        AllSettings["guild"] = {"settings":True}
+        with open('data/settings.json', 'w') as f:
+            json.dump(AllSettings, f, indent=2)
+        with open('data/settings.json') as f:
+            AllSettings = json.load(f)
 except:
+    #Try to create a new settings file
     try:
         with open('data/settings.json', 'w') as f:
             json.dump({"guild": {"settings":True}}, f, indent=2)
         with open('data/settings.json') as f:
             AllSettings = json.load(f)
+    #If even the /data directory doesn't exist
     except:
         os.mkdir("data")
         with open('data/settings.json', 'w') as f:
@@ -470,7 +479,25 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
                     await ctx.channel.send(gemrequest(construct)[1])
 
             elif interpreted == 1: #URL scan (the rate limit is pretty low with this API, probably should only scan the last message sent.)
-                url = URLExtract().find_urls(messagesPlaintextList[-1])[0]
+                urlList = URLExtract().find_urls(messagesPlaintextList[-1])
+
+                if len(urlList) == 0:
+                    await ctx.send("I'll try to parse through a few previous messages to find what URL you want scanned...")
+                    channel = ctx.channel
+                    try:
+                        messages = [message async for message in channel.history(limit=attachmentSearchContextlength)]
+                    except discord.HTTPException as e:
+                        await ctx.send(f"An error occurred: {e}")
+                        return
+                    
+                    messagesPlaintextList = [str(message.author) + ": " + message.content for message in messages]
+
+                    messagesPlaintextList.reverse()
+
+                    urlList.append(URLExtract().find_urls(messagesPlaintextList[-1]))
+
+                url = urlList[0]
+
                 if url[-1] == "/":
                     url = url[0:-1]
                 print(url)
