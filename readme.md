@@ -23,6 +23,8 @@ Install the following programs:
 - ImageMagick (in PATH, either as `magick mogrify` or `convert`)
 - `ffmpeg` (in PATH)
 
+Run the bot's file. This Python file has to be kept running for your bot to function! I recommend getting a spare computer, or if your situation doesn't allow, getting an e2-micro or similar low/no-cost cloud server. This bot is designed to be minimal in terms of resource usage, except for the occasional bursts when converting files. (Resource usage may vary based on what server you use this in)
+
 Invite the bot to your server, and `$initialize` or `$setmainchannel`. (You *may* have to run it twice if your server is inactive, as it needs at least one message to "remember" your server.)
 `$help` for more info about features.
 `$enable` or `$disable` the ones you want!

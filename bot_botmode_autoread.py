@@ -70,13 +70,15 @@ async def on_message(ctx):
         return
 
     #auto-init (silent)
-    if not ctx.guild.id in AllSettings:
+    if not str(ctx.guild.id) in channels:
         channels[str(ctx.guild.id)] = {
             "MainChannel":ctx.channel.id
         }
 
         for i in featuresList:
             channels[str(ctx.guild.id)][i] = False
+
+        print("new guild: " + str(ctx.guild.id))
 
         with open('data/settings.json', 'w') as f:
             json.dump(channels, f, indent=2)
@@ -126,6 +128,7 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
                 if parameters[1] == "all":
                     for i in featuresList:
                         channels[str(ctx.guild.id)][i] = True
+
                     with open('data/settings.json', 'w') as f:
                         json.dump(channels, f, indent=2)
 
@@ -210,7 +213,7 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
                     with open('data/settings.json') as f:
                         channels = json.load(f)
 
-                    await ctx.channel.send("All features enabled!")
+                    await ctx.channel.send("All features disabled!")
                     return
                 elif parameters[1] == "AI":
                     for i in featuresList:
@@ -223,7 +226,7 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
                     with open('data/settings.json') as f:
                         channels = json.load(f)
 
-                    await ctx.channel.send("All AI features enabled!")
+                    await ctx.channel.send("All AI features disabled!")
                     return
                 elif parameters[2] == "proactive":
                     for i in featuresList:
@@ -236,7 +239,7 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
                     with open('data/settings.json') as f:
                         channels = json.load(f)
 
-                    await ctx.channel.send("All proactive features enabled!")
+                    await ctx.channel.send("All proactive features disabled!")
                     return
             
             del(parameters[0])
@@ -287,6 +290,12 @@ List of features: AIWebScan AIMediaLoad AIResponse AIImagen AIAudioTranscribe")
     elif ctx.content.startswith("$rickroll"):
 
         await ctx.channel.send("https://random.jclink.link/serve-rickroll")
+
+        return
+
+    #prevent spending time on mistyped commands
+
+    elif ctx.content.startswith("$"):
 
         return
 
