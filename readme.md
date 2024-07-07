@@ -1,14 +1,6 @@
 # Discord bot that responds to you proactively
-This is a work-in-progress project.
-The goals are to:
-- Make a bot that will respond to you when necessary:
-    - in a channel for AI features
-    - Everywhere else for basic/essential things like file conversion
-- Make this bot runnable in *very* resource constrained environments for small servers.
-    - GCloud e2-micro is the target
 
-LLMs are used for all "smart" decision making, with the code using Google's Gemini by default, and falling back to Meta's Llama3 running on cloudflare AI.
-APIs will be used for most features, with local converters for quick file conversions.
+For web-based documentation, see [here](https://hackclub.jclink.link/documentations/discord-bots/proactive-discord-bot)
 
 ## Deploying
 First, `git clone` this repository! (or download it)
