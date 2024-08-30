@@ -41,3 +41,11 @@ To update, simply `git pull`!
 ## Privacy considerations
 
 With `AIEnabled`, the bot will send all messages from the set main channel to Google's Gemini API for processing. On free tier, Google may use this collected data to improve its models. Do not set the main channel to #general or similar, or modify the code to use Cloudflare AI instead. This may degrade performance.
+
+## Images
+
+Depends on what you name the bot, but...
+
+![Screenshot of the bot in action](self.png)
+
+...it should look something like this!
